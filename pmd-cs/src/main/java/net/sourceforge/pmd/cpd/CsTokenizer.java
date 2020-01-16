@@ -16,6 +16,7 @@ import java.io.CharArrayReader;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.PushbackReader;
+import java.util.Iterator;
 import java.util.Properties;
 
 /**
@@ -70,12 +71,18 @@ public class CsTokenizer extends AntlrTokenizer {
 
         @Override
         protected void analyzeToken(final AntlrToken currentToken) {
-            AntlrToken token = currentToken; // TODO: remove
+            skipNewLines(currentToken);
+        }
+
+        @Override
+        protected void analyzeTokens(final AntlrToken currentToken, final Iterable<AntlrToken> remainingTokens) {
+            final Iterator<AntlrToken> iterator = remainingTokens.iterator();
+            AntlrToken token = currentToken;
             do {
                 skipUsingDirectives(token);
-                token = peekNextToken();
-            } while (usingState != UsingState.DEFAULT && usingState != UsingState.DISCARDING && currentToken.getType() != org.antlr.v4.runtime.Token.EOF);
-            skipNewLines(currentToken);
+                token = iterator.next();
+            } while (usingState != UsingState.DEFAULT && usingState != UsingState.DISCARDING && iterator.hasNext() && token.getType() != org.antlr.v4.runtime.Token.EOF);
+            skipUsingDirectives(token);
         }
 
         private void skipUsingDirectives(final AntlrToken currentToken) {
