@@ -46,7 +46,7 @@ public class CsTokenizerTest {
     public void testSimpleClassMethodMultipleLines() {
         tokenizer.tokenize(toSourceCode("class Foo {\n" + "  public String foo(int a) {\n" + "    int i = a;\n"
                 + "    return \"x\" + a;\n" + "  }\n" + "}"), tokens);
-        assertEquals(22, tokens.size());
+        assertEquals(24, tokens.size());
         List<TokenEntry> tokenList = tokens.getTokens();
         assertEquals(1, tokenList.get(0).getBeginLine());
         assertEquals(2, tokenList.get(4).getBeginLine());
@@ -56,7 +56,7 @@ public class CsTokenizerTest {
     @Test
     public void testStrings() {
         tokenizer.tokenize(toSourceCode("String s =\"aaa \\\"b\\n\";"), tokens);
-        assertEquals(5, tokens.size());
+        assertEquals(6, tokens.size());
     }
 
     @Test
@@ -91,7 +91,8 @@ public class CsTokenizerTest {
                                 + "    a++; \n" + "    a /= 3e2; \n" + "    float f = -3.1; \n" + "    f *= 2; \n"
                                 + "    bool b = ! (f == 2.0 || f >= 1.0 && f <= 2.0) \n" + "  }\n" + "}"),
                         tokens);
-        assertEquals(50, tokens.size());
+        System.out.println(tokens.getTokens());
+        assertEquals(56, tokens.size());
     }
 
     @Test
@@ -128,6 +129,15 @@ public class CsTokenizerTest {
         tokenizer.setIgnoreUsings(true);
         tokenizer.tokenize(toSourceCode(
                 "using (Font font1 = new Font(\"Arial\", 10.0f)) {\n" + "  byte charset = font1.GdiCharSet;\n" + "}\n"),
+                tokens);
+        assertEquals("using", tokens.getTokens().get(0).toString());
+    }
+
+    @Test
+    public void testUsingVarStatementsAreNotIgnored() {
+        tokenizer.setIgnoreUsings(true);
+        tokenizer.tokenize(toSourceCode(
+                "using var font1 = new Font(\"Arial\", 10.0f);\n" + "  byte charset = font1.GdiCharSet;\n"),
                 tokens);
         assertEquals("using", tokens.getTokens().get(0).toString());
     }
