@@ -92,7 +92,7 @@ public class CsTokenizerTest {
                                 + "    bool b = ! (f == 2.0 || f >= 1.0 && f <= 2.0) \n" + "  }\n" + "}"),
                         tokens);
         System.out.println(tokens.getTokens());
-        assertEquals(56, tokens.size());
+        assertEquals(57, tokens.size());
     }
 
     @Test
