@@ -9,6 +9,7 @@ import static org.junit.Assert.assertNotEquals;
 
 import java.util.List;
 
+import net.sourceforge.pmd.lang.ast.TokenMgrError;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -59,10 +60,9 @@ public class CsTokenizerTest {
         assertEquals(6, tokens.size());
     }
 
-    @Test
+    @Test(expected = TokenMgrError.class)
     public void testOpenString() {
         tokenizer.tokenize(toSourceCode("String s =\"aaa \\\"b\\"), tokens);
-        assertEquals(5, tokens.size());
     }
 
     @Test
