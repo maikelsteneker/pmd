@@ -70,7 +70,11 @@ public class CsTokenizer extends AntlrTokenizer {
 
         @Override
         protected void analyzeToken(final AntlrToken currentToken) {
-            skipUsingDirectives(currentToken);
+            AntlrToken token = currentToken; // TODO: remove
+            do {
+                skipUsingDirectives(token);
+                token = peekNextToken();
+            } while (usingState != UsingState.DEFAULT && usingState != UsingState.DISCARDING && currentToken.getType() != org.antlr.v4.runtime.Token.EOF);
             skipNewLines(currentToken);
         }
 
@@ -111,6 +115,14 @@ public class CsTokenizer extends AntlrTokenizer {
                     case CSharpLexer.IDENTIFIER:
                         // Definitely a using statement; don't discard.
                         usingState = UsingState.DEFAULT;
+                        break;
+                    case CSharpLexer.DOT:
+                        // This should be considered part of the same type; revert to previous state.
+                        usingState = UsingState.KEYWORD;
+                        break;
+                    case CSharpLexer.SEMICOLON:
+                        // End of statement; discard.
+                        usingState = UsingState.DISCARDING;
                         break;
                     default:
                         break;

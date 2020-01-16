@@ -8,6 +8,9 @@ import net.sourceforge.pmd.cpd.token.TokenFilter;
 import net.sourceforge.pmd.lang.TokenManager;
 import net.sourceforge.pmd.lang.ast.GenericToken;
 
+import java.util.LinkedList;
+import java.util.Queue;
+
 /**
  * A generic filter for PMD token managers that allows to use comments
  * to enable / disable analysis of parts of the stream
@@ -16,6 +19,7 @@ public abstract class BaseTokenFilter<T extends GenericToken> implements TokenFi
 
     private final TokenManager tokenManager;
     private boolean discardingSuppressing;
+    private Queue<T> unprocessedTokens;
 
     /**
      * Creates a new BaseTokenFilter
@@ -23,10 +27,14 @@ public abstract class BaseTokenFilter<T extends GenericToken> implements TokenFi
      */
     public BaseTokenFilter(final TokenManager tokenManager) {
         this.tokenManager = tokenManager;
+        this.unprocessedTokens = new LinkedList<>();
     }
 
     @Override
     public final T getNextToken() {
+        if (!unprocessedTokens.isEmpty()) {
+            return unprocessedTokens.poll();
+        }
         T currentToken = (T) tokenManager.getNextToken();
         while (!shouldStopProcessing(currentToken)) {
             analyzeToken(currentToken);
@@ -89,5 +97,20 @@ public abstract class BaseTokenFilter<T extends GenericToken> implements TokenFi
      * @return True if the token filter has finished consuming all tokens, false otherwise
      */
     protected abstract boolean shouldStopProcessing(T currentToken);
+
+    /**
+     * Retrieves the next token without removing it.
+     *
+     * @return the next token that getNextToken() would return
+     */
+    // TODO: improve
+    protected final T peekNextToken() {
+        final T nextToken = (T) tokenManager.getNextToken();
+        if (shouldStopProcessing(nextToken)) {
+            return null;
+        }
+        unprocessedTokens.add(nextToken);
+        return nextToken;
+    }
 
 }
