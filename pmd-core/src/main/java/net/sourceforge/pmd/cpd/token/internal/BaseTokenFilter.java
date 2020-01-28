@@ -20,7 +20,7 @@ import com.google.common.collect.AbstractIterator;
 public abstract class BaseTokenFilter<T extends GenericToken> implements TokenFilter {
 
     private final TokenManager tokenManager;
-    private final LinkedList<T> unprocessedTokens; // NOPMD
+    private final LinkedList<T> unprocessedTokens; // NOPMD - used both as Queue and List
     private final Iterable<T> remainingTokens;
     private boolean discardingSuppressing;
 
