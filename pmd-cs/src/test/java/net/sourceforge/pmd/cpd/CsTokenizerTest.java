@@ -9,9 +9,10 @@ import static org.junit.Assert.assertNotEquals;
 
 import java.util.List;
 
-import net.sourceforge.pmd.lang.ast.TokenMgrError;
 import org.junit.Before;
 import org.junit.Test;
+
+import net.sourceforge.pmd.lang.ast.TokenMgrError;
 
 public class CsTokenizerTest {
 
@@ -91,7 +92,6 @@ public class CsTokenizerTest {
                                 + "    a++; \n" + "    a /= 3e2; \n" + "    float f = -3.1; \n" + "    f *= 2; \n"
                                 + "    bool b = ! (f == 2.0 || f >= 1.0 && f <= 2.0) \n" + "  }\n" + "}"),
                         tokens);
-        System.out.println(tokens.getTokens());
         assertEquals(57, tokens.size());
     }
 

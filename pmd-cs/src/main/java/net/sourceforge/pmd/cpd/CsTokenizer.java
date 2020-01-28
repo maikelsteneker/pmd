@@ -4,20 +4,15 @@
 
 package net.sourceforge.pmd.cpd;
 
-import net.sourceforge.pmd.cpd.token.AntlrToken;
-import net.sourceforge.pmd.lang.cs.antlr4.CSharpLexer;
-import org.antlr.v4.runtime.CharStream;
-
-import net.sourceforge.pmd.cpd.token.AntlrTokenFilter;
-import net.sourceforge.pmd.lang.antlr.AntlrTokenManager;
-
-import java.io.BufferedReader;
-import java.io.CharArrayReader;
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.PushbackReader;
 import java.util.Iterator;
 import java.util.Properties;
+
+import org.antlr.v4.runtime.CharStream;
+
+import net.sourceforge.pmd.cpd.token.AntlrToken;
+import net.sourceforge.pmd.cpd.token.AntlrTokenFilter;
+import net.sourceforge.pmd.lang.antlr.AntlrTokenManager;
+import net.sourceforge.pmd.lang.cs.antlr4.CSharpLexer;
 
 /**
  * The C# tokenizer.
@@ -44,7 +39,7 @@ public class CsTokenizer extends AntlrTokenizer {
 
     @Override
     protected AntlrTokenFilter getTokenFilter(final AntlrTokenManager tokenManager) {
-        return new CsTokenFilter(tokenManager);
+        return new CsTokenFilter(tokenManager, ignoreUsings);
     }
 
     /**
@@ -62,11 +57,14 @@ public class CsTokenizer extends AntlrTokenizer {
             IDENTIFIER, // just encountered an identifier or var keyword
             DISCARDING // discarding the current using directive
         }
+
+        private final boolean ignoreUsings;
         private UsingState usingState = UsingState.DEFAULT;
         private boolean discardingNL = false;
 
-        /* default */ CsTokenFilter(final AntlrTokenManager tokenManager) {
+        CsTokenFilter(final AntlrTokenManager tokenManager, boolean ignoreUsings) {
             super(tokenManager);
+            this.ignoreUsings = ignoreUsings;
         }
 
         @Override
@@ -88,53 +86,55 @@ public class CsTokenizer extends AntlrTokenizer {
         }
 
         private void skipUsingDirectives(final AntlrToken currentToken) {
-            // TODO: use setting to toggle on/off
+            if (!ignoreUsings) {
+                return;
+            }
             final int type = currentToken.getType();
             if (usingState == UsingState.DEFAULT && type == CSharpLexer.USING) {
                 usingState = UsingState.KEYWORD;
             } else if (usingState == UsingState.KEYWORD) {
                 // The previous token was a using keyword.
                 switch (type) {
-                    case CSharpLexer.STATIC:
-                        // Definitely a using directive; start discarding.
-                        usingState = UsingState.DISCARDING;
-                        break;
-                    case CSharpLexer.VAR:
-                        // Definitely a using statement; don't discard.
-                        usingState = UsingState.DEFAULT;
-                        break;
-                    case CSharpLexer.OPEN_PARENS:
-                        // Definitely a using statement; don't discard.
-                        usingState = UsingState.DEFAULT;
-                        break;
-                    case CSharpLexer.IDENTIFIER:
-                        // This is either a type for a using statement or an alias for a using directive.
-                        usingState = UsingState.IDENTIFIER;
-                        break;
-                    default:
-                        break;
+                case CSharpLexer.STATIC:
+                    // Definitely a using directive; start discarding.
+                    usingState = UsingState.DISCARDING;
+                    break;
+                case CSharpLexer.VAR:
+                    // Definitely a using statement; don't discard.
+                    usingState = UsingState.DEFAULT;
+                    break;
+                case CSharpLexer.OPEN_PARENS:
+                    // Definitely a using statement; don't discard.
+                    usingState = UsingState.DEFAULT;
+                    break;
+                case CSharpLexer.IDENTIFIER:
+                    // This is either a type for a using statement or an alias for a using directive.
+                    usingState = UsingState.IDENTIFIER;
+                    break;
+                default:
+                    break;
                 }
             } else if (usingState == UsingState.IDENTIFIER) {
                 // The previous token was an identifier.
                 switch (type) {
-                    case CSharpLexer.ASSIGNMENT:
-                        // Definitely a using directive; start discarding.
-                        usingState = UsingState.DISCARDING;
-                        break;
-                    case CSharpLexer.IDENTIFIER:
-                        // Definitely a using statement; don't discard.
-                        usingState = UsingState.DEFAULT;
-                        break;
-                    case CSharpLexer.DOT:
-                        // This should be considered part of the same type; revert to previous state.
-                        usingState = UsingState.KEYWORD;
-                        break;
-                    case CSharpLexer.SEMICOLON:
-                        // End of statement; discard.
-                        usingState = UsingState.DISCARDING;
-                        break;
-                    default:
-                        break;
+                case CSharpLexer.ASSIGNMENT:
+                    // Definitely a using directive; start discarding.
+                    usingState = UsingState.DISCARDING;
+                    break;
+                case CSharpLexer.IDENTIFIER:
+                    // Definitely a using statement; don't discard.
+                    usingState = UsingState.DEFAULT;
+                    break;
+                case CSharpLexer.DOT:
+                    // This should be considered part of the same type; revert to previous state.
+                    usingState = UsingState.KEYWORD;
+                    break;
+                case CSharpLexer.SEMICOLON:
+                    // End of statement; discard.
+                    usingState = UsingState.DISCARDING;
+                    break;
+                default:
+                    break;
                 }
             } else if (usingState == UsingState.DISCARDING && type == CSharpLexer.SEMICOLON) {
                 // End of using directive; stop discarding.
