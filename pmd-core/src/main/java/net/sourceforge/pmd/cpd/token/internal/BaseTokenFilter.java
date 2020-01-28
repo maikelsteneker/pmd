@@ -4,13 +4,15 @@
 
 package net.sourceforge.pmd.cpd.token.internal;
 
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Queue;
+
 import net.sourceforge.pmd.cpd.token.TokenFilter;
 import net.sourceforge.pmd.lang.TokenManager;
 import net.sourceforge.pmd.lang.ast.GenericToken;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Queue;
+import com.google.common.collect.AbstractIterator;
 
 /**
  * A generic filter for PMD token managers that allows to use comments
@@ -121,40 +123,27 @@ public abstract class BaseTokenFilter<T extends GenericToken> implements TokenFi
             return new RemainingTokensIterator();
         }
 
-        private class RemainingTokensIterator implements Iterator<T> {
+        private class RemainingTokensIterator extends AbstractIterator<T> implements Iterator<T> {
 
-            T next;
+            int index = 0; // index of next element
 
-            private void processNext() {
-                next = (T) tokenManager.getNextToken();
-                if (!shouldStopProcessing(next)) {
-                    unprocessedTokens.add(next);
+            @Override
+            protected T computeNext() {
+                assert index >= 0;
+                if (index < unprocessedTokens.size()) {
+                    index++;
+                    return ((LinkedList<T>) unprocessedTokens).get(index);
+                } else {
+                    final T nextToken = (T) tokenManager.getNextToken();
+                    if (shouldStopProcessing(nextToken)) {
+                        return endOfData();
+                    }
+                    index++;
+                    unprocessedTokens.add(nextToken);
+                    return nextToken;
                 }
             }
 
-            @Override
-            public boolean hasNext() {
-                if (next == null) {
-                    processNext();
-                }
-                return !shouldStopProcessing(next);
-            }
-
-            @Override
-            public T next() {
-                if (next == null) {
-                    processNext();
-                }
-                T next = this.next;
-                this.next = null;
-                return next;
-            }
-
-            @Deprecated
-            @Override
-            public void remove() {
-                throw new UnsupportedOperationException("remove"); // TODO Java 1.8 remove
-            }
         }
     }
 

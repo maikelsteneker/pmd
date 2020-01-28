@@ -80,7 +80,9 @@ public class CsTokenizer extends AntlrTokenizer {
             AntlrToken token = currentToken;
             do {
                 skipUsingDirectives(token);
-                token = iterator.next();
+                if (iterator.hasNext()) {
+                    token = iterator.next();
+                }
             } while (usingState != UsingState.DEFAULT && usingState != UsingState.DISCARDING && iterator.hasNext() && token.getType() != org.antlr.v4.runtime.Token.EOF);
             skipUsingDirectives(token);
         }

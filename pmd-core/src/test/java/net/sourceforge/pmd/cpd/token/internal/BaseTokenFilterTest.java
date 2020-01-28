@@ -1,14 +1,20 @@
+/**
+ * BSD-style license; for more info see http://pmd.sourceforge.net/license.html
+ */
+
 package net.sourceforge.pmd.cpd.token.internal;
 
-import com.google.common.collect.ImmutableList;
-import net.sourceforge.pmd.cpd.token.TokenFilter;
-import net.sourceforge.pmd.lang.TokenManager;
-import net.sourceforge.pmd.lang.ast.GenericToken;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Iterator;
 
-import static org.junit.Assert.*;
+import org.junit.Test;
+
+import net.sourceforge.pmd.cpd.token.TokenFilter;
+import net.sourceforge.pmd.lang.TokenManager;
+import net.sourceforge.pmd.lang.ast.GenericToken;
+
+import com.google.common.collect.ImmutableList;
 
 public class BaseTokenFilterTest {
 
