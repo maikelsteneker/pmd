@@ -6,7 +6,6 @@ package net.sourceforge.pmd.cpd.token.internal;
 
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Queue;
 
 import net.sourceforge.pmd.cpd.token.TokenFilter;
 import net.sourceforge.pmd.lang.TokenManager;
@@ -21,9 +20,9 @@ import com.google.common.collect.AbstractIterator;
 public abstract class BaseTokenFilter<T extends GenericToken> implements TokenFilter {
 
     private final TokenManager tokenManager;
+    private final LinkedList<T> unprocessedTokens; // NOPMD
+    private final Iterable<T> remainingTokens;
     private boolean discardingSuppressing;
-    private Queue<T> unprocessedTokens;
-    private Iterable<T> remainingTokens;
 
     /**
      * Creates a new BaseTokenFilter
@@ -132,7 +131,7 @@ public abstract class BaseTokenFilter<T extends GenericToken> implements TokenFi
                 assert index >= 0;
                 if (index < unprocessedTokens.size()) {
                     index++;
-                    return ((LinkedList<T>) unprocessedTokens).get(index);
+                    return unprocessedTokens.get(index);
                 } else {
                     final T nextToken = (T) tokenManager.getNextToken();
                     if (shouldStopProcessing(nextToken)) {
