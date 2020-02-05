@@ -4,6 +4,7 @@
 
 package net.sourceforge.pmd.cpd.token.internal;
 
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -23,6 +24,7 @@ public abstract class BaseTokenFilter<T extends GenericToken> implements TokenFi
     private final LinkedList<T> unprocessedTokens; // NOPMD - used both as Queue and List
     private final Iterable<T> remainingTokens;
     private boolean discardingSuppressing;
+    private T currentToken;
 
     /**
      * Creates a new BaseTokenFilter
@@ -36,10 +38,12 @@ public abstract class BaseTokenFilter<T extends GenericToken> implements TokenFi
 
     @Override
     public final T getNextToken() {
+        currentToken = null;
         if (!unprocessedTokens.isEmpty()) {
-            return unprocessedTokens.poll();
+            currentToken = unprocessedTokens.poll();
+            return currentToken;
         }
-        T currentToken = (T) tokenManager.getNextToken();
+        currentToken = (T) tokenManager.getNextToken();
         while (!shouldStopProcessing(currentToken)) {
             analyzeToken(currentToken);
             analyzeTokens(currentToken, remainingTokens);
@@ -119,16 +123,24 @@ public abstract class BaseTokenFilter<T extends GenericToken> implements TokenFi
 
         @Override
         public Iterator<T> iterator() {
-            return new RemainingTokensIterator();
+            return new RemainingTokensIterator(currentToken);
         }
 
         private class RemainingTokensIterator extends AbstractIterator<T> implements Iterator<T> {
 
             int index = 0; // index of next element
+            T startToken;
+
+            RemainingTokensIterator(final T startToken) {
+                this.startToken = startToken;
+            }
 
             @Override
             protected T computeNext() {
                 assert index >= 0;
+                if (startToken != currentToken) { // NOPMD - intentional check for reference equality
+                    throw new ConcurrentModificationException("Using iterator after next token has been requested.");
+                }
                 if (index < unprocessedTokens.size()) {
                     index++;
                     return unprocessedTokens.get(index);
