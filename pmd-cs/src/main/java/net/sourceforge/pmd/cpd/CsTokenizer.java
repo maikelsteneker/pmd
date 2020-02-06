@@ -143,7 +143,6 @@ public class CsTokenizer extends AntlrTokenizer {
         }
 
         private void skipNewLines(final AntlrToken currentToken) {
-            // TODO: filter out newlines
             discardingNL = currentToken.getType() == CSharpLexer.NL;
         }
 
