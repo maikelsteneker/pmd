@@ -5,8 +5,12 @@
 package net.sourceforge.pmd.cpd.token.internal;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import org.junit.Test;
 
@@ -104,7 +108,7 @@ public class BaseTokenFilterTest {
     }
 
     @Test
-    public void testRemainingTokensFunctionality() {
+    public void testRemainingTokensFunctionality1() {
         final TokenManager tokenManager = new StringTokenManager();
         final DummyTokenFilter tokenFilter = new DummyTokenFilter(tokenManager);
         final GenericToken firstToken = tokenFilter.getNextToken();
@@ -112,14 +116,75 @@ public class BaseTokenFilterTest {
         final Iterable<StringToken> iterable = tokenFilter.getRemainingTokens();
         final Iterator it1 = iterable.iterator();
         final Iterator it2 = iterable.iterator();
-        StringToken firstValFirstIt = (StringToken) it1.next();
-        StringToken firstValSecondIt = (StringToken) it2.next();
+        assertTrue(it1.hasNext());
+        assertTrue(it2.hasNext());
+        final StringToken firstValFirstIt = (StringToken) it1.next();
+        final StringToken firstValSecondIt = (StringToken) it2.next();
+        assertTrue(it1.hasNext());
+        assertTrue(it2.hasNext());
+        final StringToken secondValFirstIt = (StringToken) it1.next();
+        assertFalse(it1.hasNext());
+        assertTrue(it2.hasNext());
+        final StringToken secondValSecondIt = (StringToken) it2.next();
+        assertFalse(it2.hasNext());
         assertEquals("b", firstValFirstIt.getImage());
         assertEquals("b", firstValSecondIt.getImage());
-        StringToken secondValFirstIt = (StringToken) it1.next();
-        StringToken secondValSecondIt = (StringToken) it2.next();
         assertEquals("c", secondValFirstIt.getImage());
         assertEquals("c", secondValSecondIt.getImage());
+    }
+
+    @Test
+    public void testRemainingTokensFunctionality2() {
+        final TokenManager tokenManager = new StringTokenManager();
+        final DummyTokenFilter tokenFilter = new DummyTokenFilter(tokenManager);
+        final GenericToken firstToken = tokenFilter.getNextToken();
+        assertEquals("a", firstToken.getImage());
+        final Iterable<StringToken> iterable = tokenFilter.getRemainingTokens();
+        final Iterator it1 = iterable.iterator();
+        final Iterator it2 = iterable.iterator();
+        assertTrue(it1.hasNext());
+        assertTrue(it2.hasNext());
+        final StringToken firstValFirstIt = (StringToken) it1.next();
+        assertTrue(it1.hasNext());
+        final StringToken secondValFirstIt = (StringToken) it1.next();
+        assertFalse(it1.hasNext());
+        assertTrue(it2.hasNext());
+        final StringToken firstValSecondIt = (StringToken) it2.next();
+        assertTrue(it2.hasNext());
+        final StringToken secondValSecondIt = (StringToken) it2.next();
+        assertFalse(it2.hasNext());
+        assertEquals("b", firstValFirstIt.getImage());
+        assertEquals("b", firstValSecondIt.getImage());
+        assertEquals("c", secondValFirstIt.getImage());
+        assertEquals("c", secondValSecondIt.getImage());
+    }
+
+    @Test(expected = NoSuchElementException.class)
+    public void testRemainingTokensFunctionality3() {
+        final TokenManager tokenManager = new StringTokenManager();
+        final DummyTokenFilter tokenFilter = new DummyTokenFilter(tokenManager);
+        final GenericToken firstToken = tokenFilter.getNextToken();
+        assertEquals("a", firstToken.getImage());
+        final Iterable<StringToken> iterable = tokenFilter.getRemainingTokens();
+        final Iterator it1 = iterable.iterator();
+        final Iterator it2 = iterable.iterator();
+        it1.next();
+        it1.next();
+        it2.next();
+        it2.next();
+        it1.next();
+    }
+
+    @Test(expected = ConcurrentModificationException.class)
+    public void testRemainingTokensFunctionality4() {
+        final TokenManager tokenManager = new StringTokenManager();
+        final DummyTokenFilter tokenFilter = new DummyTokenFilter(tokenManager);
+        final GenericToken firstToken = tokenFilter.getNextToken();
+        assertEquals("a", firstToken.getImage());
+        final Iterable<StringToken> iterable = tokenFilter.getRemainingTokens();
+        final Iterator it1 = iterable.iterator();
+        final GenericToken secondToken = tokenFilter.getNextToken();
+        it1.next();
     }
 
 }
