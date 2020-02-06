@@ -18,8 +18,53 @@ import com.google.common.collect.ImmutableList;
 
 public class BaseTokenFilterTest {
 
+    class StringToken implements GenericToken {
+
+        final private String text;
+
+        StringToken(final String text) {
+            this.text = text;
+        }
+
+        @Override
+        public GenericToken getNext() {
+            return null;
+        }
+
+        @Override
+        public GenericToken getPreviousComment() {
+            return null;
+        }
+
+        @Override
+        public String getImage() {
+            return text;
+        }
+
+        @Override
+        public int getBeginLine() {
+            return 0;
+        }
+
+        @Override
+        public int getEndLine() {
+            return 0;
+        }
+
+        @Override
+        public int getBeginColumn() {
+            return 0;
+        }
+
+        @Override
+        public int getEndColumn() {
+            return 0;
+        }
+    }
+
     @Test
     public void testRemainingTokensFunctionality() {
+        final Iterable[] iterable = new Iterable[1];
         final TokenManager tokenManager = new TokenManager() {
 
             Iterator<String> iterator = ImmutableList.of("a", "b", "c").iterator();
@@ -27,7 +72,7 @@ public class BaseTokenFilterTest {
             @Override
             public Object getNextToken() {
                 if (iterator.hasNext()) {
-                    return iterator.next();
+                    return new StringToken(iterator.next());
                 } else {
                     return null;
                 }
@@ -46,14 +91,21 @@ public class BaseTokenFilterTest {
 
             @Override
             protected void analyzeTokens(final GenericToken currentToken, final Iterable remainingTokens) {
-                final Iterator it1 = remainingTokens.iterator();
-                final Iterator it2 = remainingTokens.iterator();
-                Object firstValFirstIt = it1.next();
-                Object firstValSecondIt = it2.next();
-                assertEquals("a", firstValFirstIt);
-                assertEquals("a", firstValSecondIt);
+                iterable[0] = remainingTokens;
             }
         };
+        final GenericToken firstToken = tokenFilter.getNextToken();
+        assertEquals("a", firstToken.getImage());
+        final Iterator it1 = iterable[0].iterator();
+        final Iterator it2 = iterable[0].iterator();
+        StringToken firstValFirstIt = (StringToken) it1.next();
+        StringToken firstValSecondIt = (StringToken) it2.next();
+        assertEquals("b", firstValFirstIt.getImage());
+        assertEquals("b", firstValSecondIt.getImage());
+        StringToken secondValFirstIt = (StringToken) it1.next();
+        StringToken secondValSecondIt = (StringToken) it2.next();
+        assertEquals("c", secondValFirstIt.getImage());
+        assertEquals("c", secondValSecondIt.getImage());
     }
 
 }

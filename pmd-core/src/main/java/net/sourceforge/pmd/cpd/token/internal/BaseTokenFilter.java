@@ -142,8 +142,7 @@ public abstract class BaseTokenFilter<T extends GenericToken> implements TokenFi
                     throw new ConcurrentModificationException("Using iterator after next token has been requested.");
                 }
                 if (index < unprocessedTokens.size()) {
-                    index++;
-                    return unprocessedTokens.get(index);
+                    return unprocessedTokens.get(index++);
                 } else {
                     final T nextToken = (T) tokenManager.getNextToken();
                     if (shouldStopProcessing(nextToken)) {
