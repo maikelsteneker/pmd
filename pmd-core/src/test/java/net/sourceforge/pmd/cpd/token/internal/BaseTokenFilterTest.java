@@ -184,6 +184,7 @@ public class BaseTokenFilterTest {
         final Iterable<StringToken> iterable = tokenFilter.getRemainingTokens();
         final Iterator it1 = iterable.iterator();
         final GenericToken secondToken = tokenFilter.getNextToken();
+        assertEquals("b", secondToken.getImage());
         it1.next();
     }
 
