@@ -97,18 +97,23 @@ public class CsTokenizer extends AntlrTokenizer {
                 switch (type) {
                 case CSharpLexer.STATIC:
                     // Definitely a using directive; start discarding.
+                    // Example: using static System.Math;
                     usingState = UsingState.DISCARDING;
                     break;
                 case CSharpLexer.VAR:
                     // Definitely a using statement; don't discard.
+                    // Example: using var font1 = new Font("Arial", 10.0f);
                     usingState = UsingState.DEFAULT;
                     break;
                 case CSharpLexer.OPEN_PARENS:
                     // Definitely a using statement; don't discard.
+                    // Example: using (var font1 = new Font("Arial", 10.0f);
                     usingState = UsingState.DEFAULT;
                     break;
                 case CSharpLexer.IDENTIFIER:
                     // This is either a type for a using statement or an alias for a using directive.
+                    // Example (directive): using Project = PC.MyCompany.Project;
+                    // Example (statement): using Font font1 = new Font("Arial", 10.0f);
                     usingState = UsingState.IDENTIFIER;
                     break;
                 default:
@@ -119,18 +124,22 @@ public class CsTokenizer extends AntlrTokenizer {
                 switch (type) {
                 case CSharpLexer.ASSIGNMENT:
                     // Definitely a using directive; start discarding.
+                    // Example: using Project = PC.MyCompany.Project;
                     usingState = UsingState.DISCARDING;
                     break;
                 case CSharpLexer.IDENTIFIER:
                     // Definitely a using statement; don't discard.
+                    // Example: using Font font1 = new Font("Arial", 10.0f);
                     usingState = UsingState.DEFAULT;
                     break;
                 case CSharpLexer.DOT:
                     // This should be considered part of the same type; revert to previous state.
+                    // Example (directive): using System.Text;
+                    // Example (statement): using System.Drawing.Font font1 = new Font("Arial", 10.0f);
                     usingState = UsingState.KEYWORD;
                     break;
                 case CSharpLexer.SEMICOLON:
-                    // End of statement; discard.
+                    // End of using directive; discard.
                     usingState = UsingState.DISCARDING;
                     break;
                 default:
