@@ -130,7 +130,7 @@ public class CsTokenizer extends AntlrTokenizer {
                         usingState = UsingState.KEYWORD;
                         break;
                     case CSharpLexer.SEMICOLON:
-                        // End of using directive; discard.
+                        // End of using directive.
                         return true;
                     default:
                         // Some unknown construct?
