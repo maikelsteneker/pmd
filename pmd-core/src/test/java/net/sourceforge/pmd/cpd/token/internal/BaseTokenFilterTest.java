@@ -14,7 +14,6 @@ import java.util.NoSuchElementException;
 
 import org.junit.Test;
 
-import net.sourceforge.pmd.cpd.token.TokenFilter;
 import net.sourceforge.pmd.lang.TokenManager;
 import net.sourceforge.pmd.lang.ast.GenericToken;
 
@@ -24,7 +23,7 @@ public class BaseTokenFilterTest {
 
     class StringToken implements GenericToken {
 
-        final private String text;
+        private final String text;
 
         StringToken(final String text) {
             this.text = text;
@@ -88,7 +87,7 @@ public class BaseTokenFilterTest {
 
         Iterable<T> remainingTokens;
 
-        public DummyTokenFilter(final TokenManager tokenManager) {
+        DummyTokenFilter(final TokenManager tokenManager) {
             super(tokenManager);
         }
 
