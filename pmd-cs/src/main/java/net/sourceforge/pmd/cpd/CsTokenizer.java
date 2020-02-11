@@ -51,10 +51,8 @@ public class CsTokenizer extends AntlrTokenizer {
      */
     private static class CsTokenFilter extends AntlrTokenFilter {
         private enum UsingState {
-            DEFAULT, // not within a using statement or directive
             KEYWORD, // just encountered the using keyword
             IDENTIFIER, // just encountered an identifier or var keyword
-            DISCARDING // discarding the current using directive
         }
 
         private final boolean ignoreUsings;
