@@ -4,7 +4,6 @@
 
 package net.sourceforge.pmd.cpd;
 
-import java.util.Iterator;
 import java.util.Properties;
 
 import org.antlr.v4.runtime.CharStream;
@@ -59,7 +58,7 @@ public class CsTokenizer extends AntlrTokenizer {
         }
 
         private final boolean ignoreUsings;
-        private UsingState usingState = UsingState.DEFAULT;
+        private boolean discardingUsings = false;
         private boolean discardingNL = false;
 
         CsTokenFilter(final AntlrTokenManager tokenManager, boolean ignoreUsings) {
@@ -74,81 +73,74 @@ public class CsTokenizer extends AntlrTokenizer {
 
         @Override
         protected void analyzeTokens(final AntlrToken currentToken, final Iterable<AntlrToken> remainingTokens) {
-            final Iterator<AntlrToken> iterator = remainingTokens.iterator();
-            AntlrToken token = currentToken;
-            do {
-                skipUsingDirectives(token);
-                if (iterator.hasNext()) {
-                    token = iterator.next();
-                }
-            } while (usingState != UsingState.DEFAULT && usingState != UsingState.DISCARDING && iterator.hasNext() && token.getType() != org.antlr.v4.runtime.Token.EOF);
-            skipUsingDirectives(token);
+            skipUsingDirectives(currentToken, remainingTokens);
         }
 
-        private void skipUsingDirectives(final AntlrToken currentToken) {
-            if (!ignoreUsings) {
-                return;
-            }
+        private void skipUsingDirectives(final AntlrToken currentToken, final Iterable<AntlrToken> remainingTokens) {
             final int type = currentToken.getType();
-            if (usingState == UsingState.DEFAULT && type == CSharpLexer.USING) {
-                usingState = UsingState.KEYWORD;
-            } else if (usingState == UsingState.KEYWORD) {
-                // The previous token was a using keyword.
-                switch (type) {
-                case CSharpLexer.STATIC:
-                    // Definitely a using directive; start discarding.
-                    // Example: using static System.Math;
-                    usingState = UsingState.DISCARDING;
-                    break;
-                case CSharpLexer.VAR:
-                    // Definitely a using statement; don't discard.
-                    // Example: using var font1 = new Font("Arial", 10.0f);
-                    usingState = UsingState.DEFAULT;
-                    break;
-                case CSharpLexer.OPEN_PARENS:
-                    // Definitely a using statement; don't discard.
-                    // Example: using (var font1 = new Font("Arial", 10.0f);
-                    usingState = UsingState.DEFAULT;
-                    break;
-                case CSharpLexer.IDENTIFIER:
-                    // This is either a type for a using statement or an alias for a using directive.
-                    // Example (directive): using Project = PC.MyCompany.Project;
-                    // Example (statement): using Font font1 = new Font("Arial", 10.0f);
-                    usingState = UsingState.IDENTIFIER;
-                    break;
-                default:
-                    break;
-                }
-            } else if (usingState == UsingState.IDENTIFIER) {
-                // The previous token was an identifier.
-                switch (type) {
-                case CSharpLexer.ASSIGNMENT:
-                    // Definitely a using directive; start discarding.
-                    // Example: using Project = PC.MyCompany.Project;
-                    usingState = UsingState.DISCARDING;
-                    break;
-                case CSharpLexer.IDENTIFIER:
-                    // Definitely a using statement; don't discard.
-                    // Example: using Font font1 = new Font("Arial", 10.0f);
-                    usingState = UsingState.DEFAULT;
-                    break;
-                case CSharpLexer.DOT:
-                    // This should be considered part of the same type; revert to previous state.
-                    // Example (directive): using System.Text;
-                    // Example (statement): using System.Drawing.Font font1 = new Font("Arial", 10.0f);
-                    usingState = UsingState.KEYWORD;
-                    break;
-                case CSharpLexer.SEMICOLON:
-                    // End of using directive; discard.
-                    usingState = UsingState.DISCARDING;
-                    break;
-                default:
-                    break;
-                }
-            } else if (usingState == UsingState.DISCARDING && type == CSharpLexer.SEMICOLON) {
-                // End of using directive; stop discarding.
-                usingState = UsingState.DEFAULT;
+            if (type == CSharpLexer.USING && isUsingDirective(remainingTokens)) {
+                discardingUsings = true;
+            } else if (type == CSharpLexer.SEMICOLON) {
+                discardingUsings = false;
             }
+        }
+
+        private boolean isUsingDirective(final Iterable<AntlrToken> remainingTokens) {
+            UsingState usingState = UsingState.KEYWORD;
+            for (final AntlrToken token : remainingTokens) {
+                final int type = token.getType();
+                if (usingState == UsingState.KEYWORD) {
+                    // The previous token was a using keyword.
+                    switch (type) {
+                    case CSharpLexer.STATIC:
+                        // Definitely a using directive.
+                        // Example: using static System.Math;
+                        return true;
+                    case CSharpLexer.VAR:
+                        // Definitely a using statement.
+                        // Example: using var font1 = new Font("Arial", 10.0f);
+                        return false;
+                    case CSharpLexer.OPEN_PARENS:
+                        // Definitely a using statement.
+                        // Example: using (var font1 = new Font("Arial", 10.0f);
+                        return false;
+                    case CSharpLexer.IDENTIFIER:
+                        // This is either a type for a using statement or an alias for a using directive.
+                        // Example (directive): using Project = PC.MyCompany.Project;
+                        // Example (statement): using Font font1 = new Font("Arial", 10.0f);
+                        usingState = UsingState.IDENTIFIER;
+                        break;
+                    default:
+                        // Some unknown construct?
+                        return false;
+                    }
+                } else if (usingState == UsingState.IDENTIFIER) {
+                    // The previous token was an identifier.
+                    switch (type) {
+                    case CSharpLexer.ASSIGNMENT:
+                        // Definitely a using directive.
+                        // Example: using Project = PC.MyCompany.Project;
+                        return true;
+                    case CSharpLexer.IDENTIFIER:
+                        // Definitely a using statement.
+                        // Example: using Font font1 = new Font("Arial", 10.0f);
+                        return false;
+                    case CSharpLexer.DOT:
+                        // This should be considered part of the same type; revert to previous state.
+                        // Example (directive): using System.Text;
+                        // Example (statement): using System.Drawing.Font font1 = new Font("Arial", 10.0f);
+                        usingState = UsingState.KEYWORD;
+                        break;
+                    case CSharpLexer.SEMICOLON:
+                        // End of using directive; discard.
+                        return true;
+                    default:
+                        // Some unknown construct?
+                        return false;
+                    }
+                }
+            }
+            return false;
         }
 
         private void skipNewLines(final AntlrToken currentToken) {
@@ -157,7 +149,7 @@ public class CsTokenizer extends AntlrTokenizer {
 
         @Override
         protected boolean isLanguageSpecificDiscarding() {
-            return usingState == UsingState.DISCARDING || discardingNL;
+            return discardingUsings || discardingNL;
         }
     }
 }
